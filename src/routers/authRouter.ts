@@ -6,6 +6,7 @@ import { validate } from "#/middleware/validator";
 import { verifyEmail } from "../controllers/userController";
 import { CreateUserSchema } from "#/utils/validationSchema";
 import { EmailVerificationBodySchema } from "#/utils/validationSchema";
+
 router.post("/create", validate(CreateUserSchema), createUser);
 router.post(
   "/verify-email",
