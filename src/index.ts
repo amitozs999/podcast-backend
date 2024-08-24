@@ -4,9 +4,9 @@ import path from "path";
 import "dotenv/config";
 import "./db/db.ts";
 import { execSync } from "child_process";
-
 import pool from "./db/db";
 import authRouter from "./routers/authRouter";
+import "./services/cronJobs"; // Import the cron jobs setup
 
 const app = express();
 app.use(express.json());
@@ -43,4 +43,6 @@ app.listen(PORT, async () => {
   }
 
   await testDatabaseConnection(); // Test connection after server starts
+
+  // Schedule a task using node-cron  Every 3 minutes.
 });

@@ -18,3 +18,16 @@ export const CreateUserSchema = yup.object().shape({
       "Password is too simple!"
     ),
 });
+
+export const EmailVerificationBodySchema = yup.object().shape({
+  token: yup.string().trim().required("Invalid token!"),
+  userId: yup
+    .string()
+    .transform(function (value) {
+      if (this.isType(value)) {
+        return value;
+      }
+      return "";
+    })
+    .required("Invalid userId!"),
+});
