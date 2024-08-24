@@ -94,6 +94,49 @@ export const verifyEmail: RequestHandler = async (
   }
 };
 
+export const sendReVerificationToken: RequestHandler = async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    // Check if user exists
+    const userResult = await pool.query("SELECT * FROM users WHERE id = $1", [
+      userId,
+    ]);
+    const user = userResult.rows[0];
+    if (!user) {
+      return res.status(403).json({ error: "Invalid request!" });
+    }
+
+    // Delete existing token for the user
+    await pool.query("DELETE FROM email_verification_tokens WHERE owner = $1", [
+      userId,
+    ]);
+
+    // Generate a new token
+    const token = generateToken();
+
+    // // Insert new token into the database
+    // await pool.query(
+    //   "INSERT INTO email_verification_tokens (owner, token, expiry) VALUES ($1, $2, NOW() + INTERVAL '1 hour')",
+    //   [userId, token]
+    // );
+
+    const x = await createEmailVerificationToken({ owner: userId, token });
+
+    // Send verification email
+    await sendVerificationMail(token, {
+      name: user.name,
+      email: user.email,
+      userId: user.id.toString(),
+    });
+
+    res.json({ message: "Please check your mail." + x });
+  } catch (err) {
+    console.error("Error handling re-verification token:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 export const getUsers = async () => {
   const result = await pool.query("SELECT * FROM users");
   return result.rows;
