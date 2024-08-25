@@ -34,3 +34,24 @@ export interface EmailVerificationToken {
   created_at: Date;
   expiry: Date;
 }
+
+//TypeScript does not recognize the user property on the Request object by default.
+
+//To resolve this, you need to extend the Request interface from the express module
+//to include your custom user property.
+
+declare global {
+  namespace Express {
+    interface Request {
+      user: {
+        id: any;
+        name: string;
+        email: string;
+        verified: boolean;
+        avatar?: string;
+        followers: number;
+        followings: number;
+      };
+    }
+  }
+}

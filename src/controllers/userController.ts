@@ -19,9 +19,9 @@ import { RequestHandler } from "express";
 import { createEmailVerificationToken } from "#/services/tokenService";
 
 import { VerifyEmailRequest } from "../types/userTypes"; // Ensure this type is defined
-
-const PASSWORD_RESET_LINK = "https://yourapp.com/reset-password";
-
+import jwt from "jsonwebtoken";
+import { JWT_SECRET } from "#/utils/variables";
+import { PASSWORD_RESET_LINK } from "#/utils/variables";
 export const createUser = async (req: CreateUserRequest, res: Response) => {
   const { name, email, password } = req.body;
 
@@ -253,8 +253,57 @@ export const updatePassword: RequestHandler = async (req, res) => {
     res.status(500).send("Server error");
   }
 };
+export const signIn: RequestHandler = async (req, res) => {
+  const { password, email } = req.body;
 
-// export const getUsers = async () => {
-//   const result = await pool.query("SELECT * FROM users");
-//   return result.rows;
-// };
+  try {
+    // Fetch the user record from the database
+    const userResult = await pool.query(
+      `SELECT id, password, name, email, verified, avatar_url,
+              COALESCE(favorites, '{}') AS favorites,
+              COALESCE(followers, '{}') AS followers,
+              COALESCE(followings, '{}') AS followings,
+              COALESCE(tokens, '{}') AS tokens
+       FROM users WHERE email = $1`,
+      [email]
+    );
+
+    if (userResult.rowCount === 0) {
+      return res.status(403).json({ error: "Email/Password mismatch!" });
+    }
+
+    const user = userResult.rows[0];
+
+    // Compare the password
+    const matched = await bcrypt.compare(password, user.password);
+    if (!matched) {
+      return res.status(403).json({ error: "Email/Password mismatch!" });
+    }
+
+    // Generate the token for later use
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET);
+
+    // Update the user's tokens array
+    await pool.query(
+      `UPDATE users SET tokens = array_append(tokens, $1) WHERE id = $2`,
+      [token, user.id]
+    );
+
+    // Return the response
+    res.json({
+      profile: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        verified: user.verified,
+        avatar: user.avatar_url,
+        followers: user.followers.length,
+        followings: user.followings.length,
+      },
+      token,
+    });
+  } catch (err) {
+    console.error("Error signing in:", err);
+    res.status(500).send("Server error");
+  }
+};

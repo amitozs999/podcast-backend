@@ -13,6 +13,9 @@ import { isValidPassResetToken } from "#/middleware/auth";
 import { grantValid } from "../controllers/userController";
 import { UpdatePasswordSchema } from "#/utils/validationSchema";
 import { TokenAndIDValidation } from "#/utils/validationSchema";
+import { SignInValidationSchema } from "#/utils/validationSchema";
+import { signIn } from "../controllers/userController";
+import { mustAuth } from "#/middleware/auth";
 
 router.post("/create", validate(CreateUserSchema), createUser);
 router.post(
@@ -37,5 +40,13 @@ router.post(
   isValidPassResetToken,
   updatePassword
 );
+
+router.post("/sign-in", validate(SignInValidationSchema), signIn);
+
+router.get("/is-auth", mustAuth, (req, res) => {
+  res.json({
+    profile: req.user,
+  });
+});
 
 export default router;
