@@ -1,6 +1,10 @@
 -- schema.sql
+
+-- Enable the UUID extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE IF NOT EXISTS users (
-  id SERIAL PRIMARY KEY,
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
@@ -8,14 +12,16 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_url VARCHAR(255),
   avatar_public_id VARCHAR(255),
   tokens TEXT[],
-  favorites INTEGER[],
-  followers INTEGER[],
-  followings INTEGER[],
+  favorites UUID[], -- Changed to UUID
+  followers UUID[], -- Changed to UUID
+  followings UUID[], -- Changed to UUID
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
- 
+
+
+ --  Create the email_verification_tokens table with UUID as foreign key
 CREATE TABLE IF NOT EXISTS email_verification_tokens (
   id SERIAL PRIMARY KEY,
   owner INTEGER REFERENCES users(id) ON DELETE CASCADE,

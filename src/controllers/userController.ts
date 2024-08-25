@@ -9,6 +9,7 @@ import {
 } from "#/services/tokenService"; // Import your helper functions
 
 import { sendVerificationMail } from "#/utils/mail";
+import bcrypt from "bcrypt";
 
 import { generateToken } from "#/utils/helper";
 import { RequestHandler } from "express";
@@ -20,9 +21,12 @@ export const createUser = async (req: CreateUserRequest, res: Response) => {
   const { name, email, password } = req.body;
 
   try {
+    // Hash password before saving to DB
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const result = await pool.query(
       `INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *`,
-      [name, email, password]
+      [name, email, hashedPassword]
     );
     const user = await result.rows[0];
 
