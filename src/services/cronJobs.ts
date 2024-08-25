@@ -10,7 +10,14 @@ cron.schedule("*/2 * * * *", async () => {
       DELETE FROM email_verification_tokens
       WHERE expiry < NOW();
     `);
-    console.log("Expired tokens deleted successfully.");
+    await pool.query(`
+      DELETE FROM password_reset_tokens
+      WHERE expiry < NOW();
+    `);
+
+    console.log(
+      "Expired email_verification_tokens and  password_reset_tokens deleted successfully."
+    );
   } catch (err) {
     console.error("Error executing job:", err);
   }

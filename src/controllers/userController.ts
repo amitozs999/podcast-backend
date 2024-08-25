@@ -7,6 +7,9 @@ import {
   compareToken,
   deleteTokenById,
 } from "#/services/tokenService"; // Import your helper functions
+import { sendForgetPasswordLink } from "#/utils/mail";
+import { sendPassResetSuccessEmail } from "#/utils/mail";
+import crypto from "crypto";
 
 import { sendVerificationMail } from "#/utils/mail";
 import bcrypt from "bcrypt";
@@ -16,6 +19,8 @@ import { RequestHandler } from "express";
 import { createEmailVerificationToken } from "#/services/tokenService";
 
 import { VerifyEmailRequest } from "../types/userTypes"; // Ensure this type is defined
+
+const PASSWORD_RESET_LINK = "https://yourapp.com/reset-password";
 
 export const createUser = async (req: CreateUserRequest, res: Response) => {
   const { name, email, password } = req.body;
@@ -141,7 +146,115 @@ export const sendReVerificationToken: RequestHandler = async (req, res) => {
   }
 };
 
-export const getUsers = async () => {
-  const result = await pool.query("SELECT * FROM users");
-  return result.rows;
+export const generateForgetPasswordLink: RequestHandler = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // Find user by email
+    const userResult = await pool.query(
+      `SELECT id, email FROM users WHERE email = $1`,
+      [email]
+    );
+
+    if (userResult.rowCount === 0) {
+      return res.status(404).json({ error: "Account not found!" });
+    }
+
+    const user = userResult.rows[0];
+
+    // Delete existing password reset token if present
+    await pool.query(`DELETE FROM password_reset_tokens WHERE owner = $1`, [
+      user.id,
+    ]);
+
+    // Generate forgot-password token
+    const token = crypto.randomBytes(36).toString("hex");
+    const hashedToken = await bcrypt.hash(token, 10);
+
+    // Insert the new token into the database
+    await pool.query(
+      `INSERT INTO password_reset_tokens (owner, token, created_at, expiry) VALUES ($1, $2, NOW(), NOW() + '3 minutes')`,
+      [user.id, hashedToken]
+    );
+
+    // Create the reset link
+    const resetLink = `${PASSWORD_RESET_LINK}?token=${token}&userId=${user.id}`;
+
+    // Send the reset link to the user
+    await sendForgetPasswordLink({ email: user.email, link: resetLink });
+
+    //  // Send verification email
+    //  await sendVerificationMail(token, {
+    //   name: user.name,
+    //   email: user.email,
+    //   userId: user.id.toString(),
+    // });
+
+    res.json({ message: "Check your registered mail." });
+  } catch (err) {
+    console.error("Error generating forget password link:", err);
+    res.status(500).send("Server error");
+  }
 };
+
+export const grantValid: RequestHandler = async (req, res) => {
+  res.json({ valid: true });
+};
+
+export const updatePassword: RequestHandler = async (req, res) => {
+  const { password, userId } = req.body;
+
+  try {
+    // Fetch the user record from the database
+    const userResult = await pool.query(
+      `SELECT id, password, name, email FROM users WHERE id = $1`,
+      [userId]
+    );
+
+    if (userResult.rowCount === 0) {
+      return res.status(403).json({ error: "Unauthorized access!" });
+    }
+
+    const user = userResult.rows[0];
+
+    //const hashedCurrPasswordSent = await bcrypt.hash(password, 10);
+
+    // Compare the new password with the current password
+    const isCurrentPasswordMatched = await bcrypt.compare(
+      password,
+      user.password
+    );
+
+    if (isCurrentPasswordMatched) {
+      return res
+        .status(422)
+        .json({ error: "The new password must be different!" });
+    }
+
+    // Hash the new password and update it in the database
+    const hashedNewPassword = await bcrypt.hash(password, 10);
+
+    await pool.query(`UPDATE users SET password = $1 WHERE id = $2`, [
+      hashedNewPassword,
+      userId,
+    ]);
+
+    // Delete the password reset token associated with the user
+    await pool.query(`DELETE FROM password_reset_tokens WHERE owner = $1`, [
+      userId,
+    ]);
+
+    // Send the success email
+    sendPassResetSuccessEmail(user.name, user.email);
+
+    res.json({ message: "Password reset successfully." });
+  } catch (err) {
+    console.error("Error updating password:", err);
+    res.status(500).send("Server error");
+  }
+};
+
+// export const getUsers = async () => {
+//   const result = await pool.query("SELECT * FROM users");
+//   return result.rows;
+// };

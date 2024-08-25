@@ -53,3 +53,14 @@ CREATE INDEX IF NOT EXISTS  idx_expiry ON email_verification_tokens(expiry);
 --   'SELECT remove_expired_tokens();'
 -- );
 
+
+-- Define the PostgreSQL table schema for storing password reset tokens.
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id SERIAL PRIMARY KEY,
+  owner UUID REFERENCES users(id) ON DELETE CASCADE,
+  token TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  expiry TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL '1 hour'),
+  UNIQUE (token)
+);
