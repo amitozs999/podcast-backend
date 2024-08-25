@@ -18,6 +18,7 @@ import { signIn } from "../controllers/userController";
 import { mustAuth } from "#/middleware/auth";
 import fileParser from "#/middleware/fileParser";
 import { updateProfile } from "../controllers/userController";
+import { logOut } from "../controllers/userController";
 
 router.post("/create", validate(CreateUserSchema), createUser);
 router.post(
@@ -52,5 +53,7 @@ router.get("/is-auth", mustAuth, (req, res) => {
 });
 
 router.post("/update-profile", mustAuth, fileParser, updateProfile);
+
+router.post("/log-out", mustAuth, logOut);
 
 export default router;

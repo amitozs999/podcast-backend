@@ -267,7 +267,7 @@ export const signIn: RequestHandler = async (req, res) => {
   try {
     // Fetch the user record from the database
     const userResult = await pool.query(
-      `SELECT id, password, name, email, verified, avatar_url,
+      `SELECT id, password, name, email, verified,
               COALESCE(favorites, '{}') AS favorites,
               COALESCE(followers, '{}') AS followers,
               COALESCE(followings, '{}') AS followings,
@@ -321,7 +321,8 @@ export const updateProfile: RequestHandler = async (
   res
 ) => {
   const { name } = req.body;
-  const avatar = req.files?.avatar; // Formidable returns an array
+  //const avatar = req.files?.avatar; // Formidable returns an array
+  const avatar = req.files?.avatar;
 
   console.log("avatar", avatar);
 
@@ -389,5 +390,44 @@ export const updateProfile: RequestHandler = async (
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const logOut: RequestHandler = async (req, res) => {
+  const { fromAll } = req.query;
+  const token = req.token;
+  const userId = req.user.id;
+
+  try {
+    // Fetch user from the database
+    const { rows } = await pool.query(
+      "SELECT tokens FROM users WHERE id = $1",
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "User not found!" });
+    }
+
+    let tokens = rows[0].tokens as string[];
+
+    if (fromAll === "yes") {
+      // Logout from all devices by clearing tokens
+      tokens = [];
+    } else {
+      // Remove the specific token from the array
+      tokens = tokens.filter((t) => t !== token);
+    }
+
+    // Update the tokens array in the database
+    await pool.query("UPDATE users SET tokens = $1 WHERE id = $2", [
+      tokens,
+      userId,
+    ]);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error logging out:", error);
+    res.status(500).json({ error: "Server error" });
   }
 };
