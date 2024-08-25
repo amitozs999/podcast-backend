@@ -16,6 +16,8 @@ import { TokenAndIDValidation } from "#/utils/validationSchema";
 import { SignInValidationSchema } from "#/utils/validationSchema";
 import { signIn } from "../controllers/userController";
 import { mustAuth } from "#/middleware/auth";
+import fileParser from "#/middleware/fileParser";
+import { updateProfile } from "../controllers/userController";
 
 router.post("/create", validate(CreateUserSchema), createUser);
 router.post(
@@ -48,5 +50,7 @@ router.get("/is-auth", mustAuth, (req, res) => {
     profile: req.user,
   });
 });
+
+router.post("/update-profile", mustAuth, fileParser, updateProfile);
 
 export default router;

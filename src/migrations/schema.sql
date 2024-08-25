@@ -9,8 +9,9 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
   verified BOOLEAN DEFAULT FALSE,
-  avatar_url VARCHAR(255),
-  avatar_public_id VARCHAR(255),
+  avatar JSONB,
+  --avatar_url VARCHAR(255),
+  --avatar_public_id VARCHAR(255),
   tokens TEXT[],
   favorites UUID[], -- Changed to UUID
   followers UUID[], -- Changed to UUID

@@ -48,7 +48,10 @@ declare global {
         name: string;
         email: string;
         verified: boolean;
-        avatar?: string;
+        avatar?: {
+          url: string;
+          publicId: string;
+        }; // Update avatar to match jsonb structure
         followers: number;
         followings: number;
       };

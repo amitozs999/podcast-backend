@@ -44,7 +44,7 @@ export const mustAuth: RequestHandler = async (req, res, next) => {
   const { authorization } = req.headers;
   const token = authorization?.split("Bearer ")[1];
 
-  if (!token) return res.status(403).json({ error: "Unauthorized request!" });
+  if (!token) return res.status(403).json({ error: "Unauthorized request!1" });
 
   try {
     // Verify the JWT token
@@ -53,14 +53,16 @@ export const mustAuth: RequestHandler = async (req, res, next) => {
 
     // Fetch the user and check if the token is present in the user's tokens array
     const result = await pool.query(
-      `SELECT id, name, email, verified, avatar_url, followers, followings, tokens
+      `SELECT id, name, email, verified, avatar, followers, followings, tokens
          FROM users
          WHERE id = $1 AND $2 = ANY(tokens)`,
       [userId, token]
     );
 
     const user = result.rows[0];
-    if (!user) return res.status(403).json({ error: "Unauthorized request!" });
+    if (!user) return res.status(403).json({ error: "Unauthorized request!2" });
+
+    console.log("user", user);
 
     // Attach user information to the request object
     req.user = {
@@ -68,7 +70,7 @@ export const mustAuth: RequestHandler = async (req, res, next) => {
       name: user.name,
       email: user.email,
       verified: user.verified,
-      avatar: user.avatar_url,
+      avatar: user.avatar,
       followers: user.followers ? user.followers.length : 0,
       followings: user.followings ? user.followings.length : 0,
     };
@@ -76,6 +78,6 @@ export const mustAuth: RequestHandler = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Authentication error:", error);
-    res.status(403).json({ error: "Unauthorized request!" });
+    res.status(403).json({ error: "Unauthorized request!3" });
   }
 };

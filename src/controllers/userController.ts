@@ -22,6 +22,14 @@ import { VerifyEmailRequest } from "../types/userTypes"; // Ensure this type is 
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "#/utils/variables";
 import { PASSWORD_RESET_LINK } from "#/utils/variables";
+import formidable from "formidable";
+import cloudinary from "#/cloud/indes";
+
+// Define the extended Request type to include files
+export interface RequestWithFiles extends Request {
+  files?: { [key: string]: formidable.File[] };
+}
+
 export const createUser = async (req: CreateUserRequest, res: Response) => {
   const { name, email, password } = req.body;
 
@@ -305,5 +313,81 @@ export const signIn: RequestHandler = async (req, res) => {
   } catch (err) {
     console.error("Error signing in:", err);
     res.status(500).send("Server error");
+  }
+};
+
+export const updateProfile: RequestHandler = async (
+  req: RequestWithFiles,
+  res
+) => {
+  const { name } = req.body;
+  const avatar = req.files?.avatar; // Formidable returns an array
+
+  console.log("avatar", avatar);
+
+  if (!req.user || !req.user.id) {
+    return res.status(401).json({ error: "Unauthorized!" });
+  }
+
+  const userId = req.user.id;
+
+  // Validate user input
+  if (typeof name !== "string")
+    return res.status(422).json({ error: "Invalid name!" });
+
+  if (name.trim().length < 3)
+    return res.status(422).json({ error: "Invalid name!" });
+
+  try {
+    // Update user name
+    await pool.query(`UPDATE users SET name = $1 WHERE id = $2`, [
+      name,
+      userId,
+    ]);
+
+    if (avatar) {
+      // Retrieve current user's avatar info
+      const {
+        rows: [user],
+      } = await pool.query(
+        `SELECT avatar->>'publicId' AS publicId FROM users WHERE id = $1`,
+        [userId]
+      );
+
+      if (user.publicId) {
+        // Remove the old avatar from Cloudinary
+        await cloudinary.uploader.destroy(user.publicId);
+      }
+
+      // Upload new avatar to Cloudinary
+      const { secure_url, public_id } = await cloudinary.uploader.upload(
+        avatar.filepath,
+        {
+          width: 300,
+          height: 300,
+          crop: "thumb",
+          gravity: "face",
+        }
+      );
+
+      // Update user with new avatar info
+      await pool.query(`UPDATE users SET avatar = $1 WHERE id = $2`, [
+        JSON.stringify({ url: secure_url, publicId: public_id }),
+        userId,
+      ]);
+    }
+
+    // Fetch updated user profile
+    const {
+      rows: [updatedUser],
+    } = await pool.query(
+      `SELECT id, name, email, avatar FROM users WHERE id = $1`,
+      [userId]
+    );
+
+    res.json({ profile: updatedUser });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
