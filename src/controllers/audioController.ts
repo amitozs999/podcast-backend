@@ -90,3 +90,85 @@ export const createAudio: RequestHandler = async (
     res.status(500).json({ error: "An error occurred while creating audio." });
   }
 };
+
+export const updateAudio: RequestHandler = async (
+  req: CreateAudioRequest,
+  res
+) => {
+  const { title, about, category } = req.body;
+  const poster = req.files?.poster as formidable.File;
+  const ownerId = req.user.id;
+  const { audioId } = req.params;
+
+  console.log(req.body);
+
+  try {
+    // Check if the audio exists
+    const audioResult = await pool.query(
+      "SELECT * FROM audios WHERE id = $1 AND owner = $2",
+      [audioId, ownerId]
+    );
+
+    if (audioResult.rows.length === 0) {
+      return res.status(404).json({ error: "Record not found!" });
+    }
+
+    const audio = audioResult.rows[0];
+
+    // Update the audio record
+    await pool.query(
+      `UPDATE audios
+         SET title = COALESCE($1, title),
+             about = COALESCE($2, about),
+             category = COALESCE($3, category),
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $4`,
+      [title, about, category, audioId]
+    );
+
+    // Handle poster update
+    if (poster) {
+      if (audio.poster_public_id) {
+        // Delete old poster from Cloudinary
+        await cloudinary.uploader.destroy(audio.poster_public_id);
+      }
+
+      // Upload new poster to Cloudinary
+      const posterRes = await cloudinary.uploader.upload(poster.filepath, {
+        width: 300,
+        height: 300,
+        crop: "thumb",
+        gravity: "face",
+      });
+
+      // Update the poster information in the database
+      await pool.query(
+        `UPDATE audios
+           SET poster_url = $1,
+               poster_public_id = $2
+           WHERE id = $3`,
+        [posterRes.secure_url, posterRes.public_id, audioId]
+      );
+    }
+
+    // Retrieve the updated audio record
+    const updatedAudioResult = await pool.query(
+      "SELECT * FROM audios WHERE id = $1",
+      [audioId]
+    );
+
+    const updatedAudio = updatedAudioResult.rows[0];
+
+    res.status(200).json({
+      audio: {
+        title: updatedAudio.title,
+        about: updatedAudio.about,
+        file: updatedAudio.file_url,
+        poster: updatedAudio.poster_url,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating audio:", error);
+    res.status(500).json({ error: "An error occurred while updating audio." });
+  }
+};
