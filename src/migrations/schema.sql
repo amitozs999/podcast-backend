@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
   --avatar_url VARCHAR(255),
   --avatar_public_id VARCHAR(255),
   tokens TEXT[],
-  favorites UUID[], -- Changed to UUID
+  favorites UUID[], -- Changed to UUID   is user ki kon konsi favourites he audios uski id
   followers UUID[], -- Changed to UUID
   followings UUID[], -- Changed to UUID
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -101,9 +101,21 @@ CREATE TABLE IF NOT EXISTS audios (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
---  each audio can be liked by multiple users, you need a junction table (also known as a join table) to handle the many-to-many relationship.
-CREATE TABLE IF NOT EXISTS audio_likes (
-  audio_id UUID NOT NULL REFERENCES audios(id),
-  user_id UUID NOT NULL REFERENCES users(id),
+--  each audio can be liked/favorited by multiple users, you need a junction table (also known as a join table) to handle the many-to-many relationship.
+
+CREATE TABLE IF NOT EXISTS audio_favourite(
+  id UUID  DEFAULT uuid_generate_v4(),   -- Unique identifier for each favorite entry
+  audio_id UUID NOT NULL REFERENCES audios(id), -- Foreign key referencing the `audios` table
+   user_id UUID NOT NULL REFERENCES users(id),  -- Foreign key referencing the `users` table
   PRIMARY KEY (audio_id, user_id)  -- Composite primary key ensures unique combination
 );
+
+
+-- -- favorites: A junction table that represents the many-to-many relationship between users and audios.
+
+-- CREATE TABLE IF NOT EXISTS favorites (
+--     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),   -- Unique identifier for each favorite entry
+--     user_id UUID REFERENCES users(id) ON DELETE CASCADE, -- Foreign key referencing the `users` table
+--     audio_id UUID REFERENCES audios(id) ON DELETE CASCADE, -
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- Timestamp when the favorite entry was created
+-- );
