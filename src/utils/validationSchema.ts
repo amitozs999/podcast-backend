@@ -71,3 +71,24 @@ export const SignInValidationSchema = yup.object().shape({
   email: yup.string().required("Email is missing!").email("Invalid email id!"),
   password: yup.string().trim().required("Password is missing!"),
 });
+
+export const categories = [
+  "Arts",
+  "Business",
+  "Education",
+  "Entertainment",
+  "Kids & Family",
+  "Music",
+  "Science",
+  "Tech",
+  "Others",
+];
+
+export const AudioValidationSchema = yup.object().shape({
+  title: yup.string().required("Title is missing!"),
+  about: yup.string().required("About is missing!"),
+  category: yup
+    .string()
+    .oneOf(categories, "Invalid category!")
+    .required("Category is missing!"),
+});

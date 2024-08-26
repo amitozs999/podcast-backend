@@ -1,7 +1,6 @@
 import express, { Request, Response } from "express";
 import { CreateUserRequest } from "#/types/userTypes";
 import { createUser } from "../controllers/userController";
-const router = express.Router();
 import { validate } from "#/middleware/validator";
 import { verifyEmail } from "../controllers/userController";
 import { CreateUserSchema } from "#/utils/validationSchema";
@@ -19,6 +18,8 @@ import { mustAuth } from "#/middleware/auth";
 import fileParser from "#/middleware/fileParser";
 import { updateProfile } from "../controllers/userController";
 import { logOut } from "../controllers/userController";
+
+const router = express.Router();
 
 router.post("/create", validate(CreateUserSchema), createUser);
 router.post(

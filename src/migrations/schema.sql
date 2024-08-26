@@ -65,3 +65,45 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   expiry TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL '1 hour'),
   UNIQUE (token)
 );
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type
+        WHERE typname = 'category_type'
+    ) THEN
+        CREATE TYPE category_type AS ENUM (
+            'Arts',
+            'Business',
+            'Education',
+            'Entertainment',
+            'Kids & Family',
+            'Music',
+            'Science',
+            'Tech',
+            'Others'
+        );
+    END IF;
+END
+$$;
+
+CREATE TABLE IF NOT EXISTS audios (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    about TEXT NOT NULL,
+    owner UUID REFERENCES users(id) ON DELETE SET NULL,
+    file_url VARCHAR(255) NOT NULL,
+    file_public_id VARCHAR(255) NOT NULL,
+    poster_url VARCHAR(255),
+    poster_public_id VARCHAR(255),
+    category category_type DEFAULT 'Others',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+--  each audio can be liked by multiple users, you need a junction table (also known as a join table) to handle the many-to-many relationship.
+CREATE TABLE IF NOT EXISTS audio_likes (
+  audio_id UUID NOT NULL REFERENCES audios(id),
+  user_id UUID NOT NULL REFERENCES users(id),
+  PRIMARY KEY (audio_id, user_id)  -- Composite primary key ensures unique combination
+);

@@ -6,6 +6,8 @@ import "./db/db.ts";
 import { execSync } from "child_process";
 import pool from "./db/db";
 import authRouter from "./routers/authRouter";
+import audioRouter from "./routers/audioRouter";
+
 import "./services/cronJobs"; // Import the cron jobs setup
 
 const app = express();
@@ -14,6 +16,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static("src/public"));
 
 app.use("/auth", authRouter);
+app.use("/audio", audioRouter);
 
 const PORT = process.env.PORT || 8989;
 
