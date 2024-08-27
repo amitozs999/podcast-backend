@@ -110,12 +110,19 @@ CREATE TABLE IF NOT EXISTS audio_favourite(
   PRIMARY KEY (audio_id, user_id)  -- Composite primary key ensures unique combination
 );
 
+ CREATE TABLE IF NOT EXISTS playlists (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    owner UUID REFERENCES users(id) ON DELETE SET NULL,
+    visibility VARCHAR(10) CHECK (visibility IN ('public', 'private', 'auto')) DEFAULT 'public',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
--- -- favorites: A junction table that represents the many-to-many relationship between users and audios.
+-- Create a playlist_items table to store the relationship between playlists and audios:
 
--- CREATE TABLE IF NOT EXISTS favorites (
---     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),   -- Unique identifier for each favorite entry
---     user_id UUID REFERENCES users(id) ON DELETE CASCADE, -- Foreign key referencing the `users` table
---     audio_id UUID REFERENCES audios(id) ON DELETE CASCADE, -
---     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- Timestamp when the favorite entry was created
--- );
+CREATE TABLE IF NOT EXISTS playlist_audio_items (
+    playlist_id UUID NOT NULL REFERENCES playlists(id) ON DELETE CASCADE,
+    audio_id UUID NOT NULL REFERENCES audios(id),
+    PRIMARY KEY (playlist_id, audio_id)
+);
