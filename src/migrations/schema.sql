@@ -126,3 +126,29 @@ CREATE TABLE IF NOT EXISTS playlist_audio_items (
     audio_id UUID NOT NULL REFERENCES audios(id),
     PRIMARY KEY (playlist_id, audio_id)
 );
+
+-- followers Table:
+-- Tracks which users are following which other users.
+ 
+-- jisnefollowkiyahe(follower_id)   jiskofollowedkiyahe(followed_id )
+CREATE TABLE IF NOT EXISTS followers (
+  follower_id UUID NOT NULL,
+  followed_id UUID NOT NULL,
+  PRIMARY KEY (follower_id, followed_id),
+  FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (followed_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+
+
+-- followings Table:
+-- Tracks which users are being followed by which other users.
+
+-- isuserko(follower_id)   kisnefollowkiya(following_id )
+CREATE TABLE IF NOT EXISTS followings (
+  follower_id UUID NOT NULL,
+  following_id UUID NOT NULL,
+  PRIMARY KEY (follower_id, following_id),
+  FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE
+);

@@ -41,6 +41,7 @@ export const isValidPassResetToken: RequestHandler = async (req, res, next) => {
 };
 
 export const mustAuth: RequestHandler = async (req, res, next) => {
+  console.log("mustauthhit");
   const { authorization } = req.headers;
   const token = authorization?.split("Bearer ")[1];
 

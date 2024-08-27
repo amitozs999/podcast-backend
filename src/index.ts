@@ -9,6 +9,7 @@ import authRouter from "./routers/authRouter";
 import audioRouter from "./routers/audioRouter";
 import favoriteRouter from "./routers/favoriteRouter";
 import playlistRouter from "./routers/playlistRouter";
+import profileRouter from "./routers/profileRouter";
 
 import "./services/cronJobs"; // Import the cron jobs setup
 
@@ -21,6 +22,7 @@ app.use("/auth", authRouter);
 app.use("/audio", audioRouter);
 app.use("/favorite", favoriteRouter);
 app.use("/playlist", playlistRouter);
+app.use("/profile", profileRouter);
 
 const PORT = process.env.PORT || 8989;
 
