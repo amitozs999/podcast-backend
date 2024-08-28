@@ -152,3 +152,24 @@ CREATE TABLE IF NOT EXISTS followings (
   FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+
+-- Table to store audio history
+CREATE TABLE IF NOT EXISTS history (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    owner UUID REFERENCES users(id) ON DELETE CASCADE,
+    last_audio UUID REFERENCES audios(id),
+    last_progress INTEGER,
+    last_date TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table to store audios enteries of that history
+CREATE TABLE IF NOT EXISTS history_entries (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    history_id UUID REFERENCES history(id) ON DELETE CASCADE,
+    audio_id UUID REFERENCES audios(id),
+    progress INTEGER,
+    date TIMESTAMPTZ NOT NULL
+);

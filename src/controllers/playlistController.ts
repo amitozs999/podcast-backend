@@ -65,6 +65,7 @@ export const createPlaylist: RequestHandler = async (req, res) => {
 
 export const updatePlaylist: RequestHandler = async (req, res) => {
   const { id, item, title, visibility } = req.body; //audioitem
+
   const userId = req.user.id;
 
   let client;

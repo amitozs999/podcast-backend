@@ -133,3 +133,25 @@ export const OldPlaylistValidationSchema = yup.object().shape({
     .oneOf(["public", "private"], "Visibility must be public or private!"),
   // .required("Visibility is missing!"),
 });
+
+export const UpdateHistorySchema = yup.object().shape({
+  audio: yup
+    .string()
+    .transform(function (value) {
+      console.log("xx1");
+
+      return value;
+    })
+    .required("Invalid audio id!"),
+  progress: yup.number().required("History progress is missing!"),
+  date: yup
+    .string()
+    .transform(function (value) {
+      console.log("xx2");
+
+      const date = new Date(value);
+      if (date instanceof Date) return value;
+      return "";
+    })
+    .required("Invalid date!"),
+});
