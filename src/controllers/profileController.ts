@@ -159,7 +159,7 @@ export const getAllUploadedAudio: RequestHandler = async (req, res) => {
   const userId = req.user.id as string;
 
   const uploadsRes = await pool.query(
-    `SELECT id, title, about, file_url AS file, poster_url AS poster, created_at AS date
+    `SELECT id, title,category, about, file_url AS file, poster_url AS poster, created_at AS date
      FROM audios
      WHERE owner = $1
      ORDER BY created_at DESC
@@ -171,6 +171,7 @@ export const getAllUploadedAudio: RequestHandler = async (req, res) => {
     id: item.id,
     title: item.title,
     about: item.about,
+    category: item.category,
     file: item.file,
     poster: item.poster,
     date: item.date,
@@ -212,4 +213,35 @@ export const getAllploadedAudiofPassedUser: RequestHandler = async (
   }));
 
   res.json({ audios });
+};
+
+export const getIsFollowing: RequestHandler = async (req, res) => {
+  const { profileId } = req.params;
+  const userId = req.user.id; // Assuming req.user.id is set by authentication middleware
+
+  //   console.log(profileId);
+  //   console.log(userId);
+
+  // // Validate the profile ID format
+  // if (!isValidUUID(profileId)) {
+  //   return res.status(422).json({ error: "Invalid profile id!" });
+  // }
+
+  try {
+    // Query to check if the user is following the profile
+    const { rows } = await pool.query(
+      `SELECT EXISTS (
+          SELECT 1 
+          FROM followers 
+          WHERE follower_id = $1 AND followed_id = $2
+        ) AS is_following`,
+      [userId, profileId]
+    );
+
+    // Directly use the result with alias
+    res.json({ status: rows[0].is_following });
+  } catch (error) {
+    console.error("Error checking follow status:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
 };

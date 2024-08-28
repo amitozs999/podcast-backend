@@ -5,6 +5,7 @@ import { getPublicProfile } from "#/controllers/profileController";
 import { getPublicPlaylist } from "#/controllers/profileController";
 import { getAllUploadedAudio } from "#/controllers/profileController";
 import { getAllploadedAudiofPassedUser } from "#/controllers/profileController";
+import { getIsFollowing } from "#/controllers/profileController";
 
 const router = Router();
 
@@ -19,5 +20,8 @@ router.get("/uploads", mustAuth, getAllUploadedAudio);
 // of this passed user
 router.get("/uploads/:profileId", getAllploadedAudiofPassedUser);
 //
+
+//check if cuser folloeing this profileid user
+router.get("/is-following/:profileId", mustAuth, getIsFollowing);
 
 export default router;

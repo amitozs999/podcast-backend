@@ -34,6 +34,14 @@ export const createUser = async (req: CreateUserRequest, res: Response) => {
   const { name, email, password } = req.body;
 
   try {
+    const { rows } = await pool.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
+
+    if (rows.length > 0) {
+      return res.status(403).json({ error: "Email is already in use!" });
+    }
+
     // Hash password before saving to DB
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -124,6 +132,10 @@ export const sendReVerificationToken: RequestHandler = async (req, res) => {
       return res.status(403).json({ error: "Invalid request!" });
     }
 
+    // Check if user is already verified
+    if (user.verified) {
+      return res.status(200).json({ message: "User is already verified." });
+    }
     // Delete existing token for the user
     await pool.query("DELETE FROM email_verification_tokens WHERE owner = $1", [
       userId,

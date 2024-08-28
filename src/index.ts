@@ -1,4 +1,6 @@
 import express from "express";
+import "express-async-errors";
+
 import fs from "fs";
 import path from "path";
 import "dotenv/config";
@@ -11,7 +13,7 @@ import favoriteRouter from "./routers/favoriteRouter";
 import playlistRouter from "./routers/playlistRouter";
 import profileRouter from "./routers/profileRouter";
 import historyRouter from "./routers/historyRouter";
-
+import { errorHandler } from "./middleware/errorMiddleware";
 import "./services/cronJobs"; // Import the cron jobs setup
 
 const app = express();
@@ -25,6 +27,8 @@ app.use("/favorite", favoriteRouter);
 app.use("/playlist", playlistRouter);
 app.use("/profile", profileRouter);
 app.use("/history", historyRouter);
+// Use error-handling middleware
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 8989;
 

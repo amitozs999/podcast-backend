@@ -3,6 +3,9 @@ import bcrypt from "bcrypt";
 import pool from "../db/db"; // Ensure you have PostgreSQL pool configured
 import { verify, JwtPayload } from "jsonwebtoken";
 import { JWT_SECRET } from "#/utils/variables";
+
+import { ValidationError } from "#/utils/errors";
+
 export const isValidPassResetToken: RequestHandler = async (req, res, next) => {
   const { token, userId } = req.body;
 
@@ -46,10 +49,15 @@ export const mustAuth: RequestHandler = async (req, res, next) => {
   const { authorization } = req.headers;
 
   const token = authorization?.split("Bearer ")[1];
+  //g;  add this line to throw error
 
   if (!token) return res.status(403).json({ error: "Unauthorized request!1" });
 
   try {
+    // if (!req.body.name) {
+    //   throw new ValidationError('Name is required');
+    // }
+
     // Verify the JWT token
     const payload = verify(token, JWT_SECRET) as JwtPayload;
     const userId = payload.userId;

@@ -55,6 +55,13 @@ export const toggleFavorite: RequestHandler = async (req, res) => {
 export const getFavorites: RequestHandler = async (req, res) => {
   const userId = req.user.id;
 
+  const { limit = "20", pageNo = "0" } = req.query as {
+    limit: string;
+    pageNo: string;
+  };
+  const offset = parseInt(pageNo) * parseInt(limit);
+  const limitInt = parseInt(limit);
+
   try {
     //if you only need information about the favorite audios themselves and do not need details
     //about the audio owners
@@ -66,8 +73,9 @@ export const getFavorites: RequestHandler = async (req, res) => {
          FROM audio_favourite f
          JOIN audios a ON f.audio_id = a.id
          JOIN users u ON a.owner = u.id
-         WHERE f.user_id = $1`,
-      [userId]
+         WHERE f.user_id = $1
+         LIMIT $2 OFFSET $3`,
+      [userId, limitInt, offset]
     );
 
     // Map results to the desired format
