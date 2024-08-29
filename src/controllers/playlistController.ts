@@ -172,7 +172,81 @@ export const getPlaylistByProfile: RequestHandler = async (req, res) => {
   }
 };
 
-export const getAudios: RequestHandler = async (req, res) => {
+export const getPlaylistAudios: RequestHandler = async (req, res) => {
+  const { playlistId } = req.params;
+  //const userId = req.user.id;
+
+  console.log("Received playlistId:", playlistId); // Debugging
+
+  let client;
+  try {
+    client = await pool.connect();
+
+    // Validate playlist
+    const playlistResult = await client.query(
+      "SELECT id, title FROM playlists WHERE id = $1 AND visibility !=`private`  ",
+      [playlistId]
+    );
+
+    if (playlistResult.rowCount === 0) {
+      // If no playlist found, try the auto-generated playlists
+
+      const autoplaylistResult = await client.query(
+        "SELECT id, title FROM auto_generated_playlists WHERE id = $1",
+        [playlistId]
+      );
+
+      if (autoplaylistResult.rowCount === 0) {
+        return res.status(404).json({ error: "Playlist not found!" });
+      }
+
+      // Get audios in playlist
+      const audiosResult = await client.query(
+        `SELECT a.id, a.title, a.category, a.file_url, a.poster_url, u.name AS owner_name, u.id AS owner_id 
+        FROM auto_generated_playlist_audio_items  pi 
+        JOIN audios a ON pi.audio_id = a.id 
+        JOIN users u ON a.owner = u.id 
+        WHERE pi.playlist_id = $1`,
+        [playlistId]
+      );
+
+      res.json({
+        list: {
+          id: playlistId,
+          title: playlistResult.rows[0].title,
+          audios: audiosResult.rows,
+        },
+      });
+    }
+
+    // Get audios in playlist
+    const audiosResult = await client.query(
+      `SELECT a.id, a.title, a.category, a.file_url, a.poster_url, u.name AS owner_name, u.id AS owner_id 
+      FROM playlist_audio_items pi 
+      JOIN audios a ON pi.audio_id = a.id 
+      JOIN users u ON a.owner = u.id 
+      WHERE pi.playlist_id = $1`,
+      [playlistId]
+    );
+
+    res.json({
+      list: {
+        id: playlistId,
+        title: playlistResult.rows[0].title,
+        audios: audiosResult.rows,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  } finally {
+    if (client) client.release();
+  }
+};
+
+export const getCurrentUserPlaylistAudios: RequestHandler = async (
+  req,
+  res
+) => {
   const { playlistId } = req.params;
   const userId = req.user.id;
 
@@ -187,17 +261,45 @@ export const getAudios: RequestHandler = async (req, res) => {
       "SELECT id, title FROM playlists WHERE id = $1 AND owner = $2",
       [playlistId, userId]
     );
+
     if (playlistResult.rowCount === 0) {
-      return res.status(404).json({ error: "Playlist not found!" });
+      // If no playlist found, try the auto-generated playlists
+
+      const autoplaylistResult = await client.query(
+        "SELECT id, title FROM auto_generated_playlists WHERE id = $1",
+        [playlistId]
+      );
+
+      if (autoplaylistResult.rowCount === 0) {
+        return res.status(404).json({ error: "Playlist not found!" });
+      }
+
+      // Get audios in playlist
+      const audiosResult = await client.query(
+        `SELECT a.id, a.title, a.category, a.file_url, a.poster_url, u.name AS owner_name, u.id AS owner_id 
+          FROM auto_generated_playlist_audio_items  pi 
+          JOIN audios a ON pi.audio_id = a.id 
+          JOIN users u ON a.owner = u.id 
+          WHERE pi.playlist_id = $1`,
+        [playlistId]
+      );
+
+      res.json({
+        list: {
+          id: playlistId,
+          title: playlistResult.rows[0].title,
+          audios: audiosResult.rows,
+        },
+      });
     }
 
     // Get audios in playlist
     const audiosResult = await client.query(
       `SELECT a.id, a.title, a.category, a.file_url, a.poster_url, u.name AS owner_name, u.id AS owner_id 
-      FROM playlist_audio_items pi 
-      JOIN audios a ON pi.audio_id = a.id 
-      JOIN users u ON a.owner = u.id 
-      WHERE pi.playlist_id = $1`,
+        FROM playlist_audio_items pi 
+        JOIN audios a ON pi.audio_id = a.id 
+        JOIN users u ON a.owner = u.id 
+        WHERE pi.playlist_id = $1`,
       [playlistId]
     );
 

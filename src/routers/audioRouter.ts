@@ -9,6 +9,7 @@ import { isVerified } from "#/middleware/auth";
 import { AudioValidationSchema } from "#/utils/validationSchema";
 import { validate } from "#/middleware/validator";
 import { updateAudio } from "#/controllers/audioController";
+import { getLatestTenAudios } from "#/controllers/audioController";
 
 router.post(
   "/create",
@@ -27,5 +28,7 @@ router.patch(
   validate(AudioValidationSchema),
   updateAudio
 );
+
+router.get("/latestTenAudios", getLatestTenAudios);
 
 export default router;

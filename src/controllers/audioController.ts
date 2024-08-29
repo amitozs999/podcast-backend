@@ -172,3 +172,43 @@ export const updateAudio: RequestHandler = async (
     res.status(500).json({ error: "An error occurred while updating audio." });
   }
 };
+
+export const getLatestTenAudios: RequestHandler = async (req, res) => {
+  try {
+    // Query to get the latest uploads
+    const { rows } = await pool.query(`
+          SELECT
+            a.id AS audio_id,
+            a.title,
+            a.about,
+            a.category,
+            a.file_url AS file,
+            a.poster_url AS poster,
+            u.id AS owner_id,
+            u.name AS owner_name
+          FROM audios a
+          LEFT JOIN users u ON a.owner = u.id
+          ORDER BY a.created_at DESC
+          LIMIT 10
+        `);
+
+    // Transform the result into the desired format
+    const audios = rows.map((row) => ({
+      id: row.audio_id,
+      title: row.title,
+      about: row.about,
+      category: row.category,
+      file: row.file,
+      poster: row.poster,
+      owner: {
+        name: row.owner_name,
+        id: row.owner_id,
+      },
+    }));
+
+    res.json({ audios });
+  } catch (error) {
+    console.error("Error fetching latest uploads:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

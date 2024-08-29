@@ -42,6 +42,7 @@ export const isValidPassResetToken: RequestHandler = async (req, res, next) => {
     res.status(500).send("Server error");
   }
 };
+//check if has token and valid user with that token, then only proceed age
 
 export const mustAuth: RequestHandler = async (req, res, next) => {
   console.log("mustauthhit");
@@ -86,6 +87,57 @@ export const mustAuth: RequestHandler = async (req, res, next) => {
       followings: user.followings ? user.followings.length : 0,
     };
     req.token = token;
+
+    next();
+  } catch (error) {
+    console.error("Authentication error:", error);
+    res.status(403).json({ error: "Unauthorized request!3" });
+  }
+};
+
+//check if has token and valid user with that token,  set that token on req
+//else ese hi age without setting token
+
+export const isAuth: RequestHandler = async (req, res, next) => {
+  console.log("isauthhit");
+
+  const { authorization } = req.headers;
+
+  const token = authorization?.split("Bearer ")[1];
+  //g;  add this line to throw error
+
+  try {
+    if (token) {
+      // Verify the JWT token
+      const payload = verify(token, JWT_SECRET) as JwtPayload;
+      const userId = payload.userId;
+
+      // Fetch the user and check if the token is present in the user's tokens array
+      const result = await pool.query(
+        `SELECT id, name, email, verified, avatar, followers, followings, tokens
+         FROM users
+         WHERE id = $1 AND $2 = ANY(tokens)`,
+        [userId, token]
+      );
+
+      const user = result.rows[0];
+      if (!user)
+        return res.status(403).json({ error: "Unauthorized request!2" });
+
+      console.log("user", user);
+
+      // Attach user information to the request object
+      req.user = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        verified: user.verified,
+        avatar: user.avatar,
+        followers: user.followers ? user.followers.length : 0,
+        followings: user.followings ? user.followings.length : 0,
+      };
+      req.token = token;
+    }
 
     next();
   } catch (error) {

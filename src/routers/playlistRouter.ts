@@ -8,7 +8,8 @@ import { updatePlaylist } from "#/controllers/playlistController";
 import { OldPlaylistValidationSchema } from "#/utils/validationSchema";
 import { removePlaylist } from "#/controllers/playlistController";
 import { getPlaylistByProfile } from "#/controllers/playlistController";
-import { getAudios } from "#/controllers/playlistController";
+import { getPlaylistAudios } from "#/controllers/playlistController";
+import { getCurrentUserPlaylistAudios } from "#/controllers/playlistController";
 
 const router = Router();
 
@@ -28,6 +29,11 @@ router.patch(
 router.delete("/remove", mustAuth, removePlaylist);
 
 router.get("/playlist-by-profile", mustAuth, getPlaylistByProfile);
-router.get("/getplaylistaudios/:playlistId", mustAuth, getAudios);
+router.get("/getplaylistaudios/:playlistId", getPlaylistAudios); //of public playlists
 
+router.get(
+  "/getcurrentuserplaylistaudios/:playlistId",
+  mustAuth,
+  getCurrentUserPlaylistAudios
+);
 export default router;

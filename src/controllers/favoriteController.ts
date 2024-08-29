@@ -9,7 +9,7 @@ export const toggleFavorite: RequestHandler = async (req, res) => {
   try {
     // Check if the audio exists
     const audioResult = await pool.query(
-      "SELECT id FROM audios WHERE id = $1",
+      "SELECT id, favorites_count FROM audios WHERE id = $1",
       [audioId]
     );
 
@@ -18,6 +18,7 @@ export const toggleFavorite: RequestHandler = async (req, res) => {
     }
 
     const userId = req.user.id;
+    const { favorites_count } = audioResult.rows[0];
 
     // Check if the audio is already favourited by the user
     const favoriteCheckResult = await pool.query(
@@ -34,6 +35,11 @@ export const toggleFavorite: RequestHandler = async (req, res) => {
         [userId, audioId]
       );
 
+      // Decrement the favorites_count
+      await pool.query("UPDATE audios SET favorites_count = $1 WHERE id = $2", [
+        favorites_count - 1,
+        audioId,
+      ]);
       status = "removed";
     } else {
       // Add the audio to favorites
@@ -41,6 +47,12 @@ export const toggleFavorite: RequestHandler = async (req, res) => {
         "INSERT INTO audio_favourite (user_id, audio_id) VALUES ($1, $2)",
         [userId, audioId]
       );
+
+      // Increment the favorites_count
+      await pool.query("UPDATE audios SET favorites_count = $1 WHERE id = $2", [
+        favorites_count + 1,
+        audioId,
+      ]);
 
       status = "added";
     }

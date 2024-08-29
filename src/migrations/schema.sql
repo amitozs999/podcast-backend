@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   verified BOOLEAN DEFAULT FALSE,
   avatar JSONB,
+  -- { url, publicId}
   --avatar_url VARCHAR(255),
   --avatar_public_id VARCHAR(255),
   tokens TEXT[],
@@ -126,6 +127,25 @@ CREATE TABLE IF NOT EXISTS playlist_audio_items (
     audio_id UUID NOT NULL REFERENCES audios(id),
     PRIMARY KEY (playlist_id, audio_id)
 );
+
+
+-- Create the auto_generated_playlists table
+CREATE TABLE IF NOT EXISTS auto_generated_playlists (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create a playlist_audio_items table to store the relationship between auto-generated playlists and audios
+CREATE TABLE IF NOT EXISTS auto_generated_playlist_audio_items (
+    playlist_id UUID NOT NULL REFERENCES auto_generated_playlists(id) ON DELETE CASCADE,
+    audio_id UUID NOT NULL REFERENCES audios(id),
+    PRIMARY KEY (playlist_id, audio_id)
+);
+
+
+
 
 -- followers Table:
 -- Tracks which users are following which other users.
